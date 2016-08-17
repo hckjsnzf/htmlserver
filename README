@@ -1,0 +1,4 @@
+htmlserver(HS)是一款我原创研发的超高性能Web服务器，
+使用高性能HTTP解析器fasterhttp作为解析核心，在开启Keep-Alive和gip压缩时性能秒杀nginx。
+
+see doc/*
