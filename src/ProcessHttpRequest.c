@@ -83,22 +83,6 @@ int ProcessHttpRequest( struct HtmlServer *p_server , struct HttpSession *p_http
 		return HTTP_BAD_REQUEST;
 	}
 	
-	p_mimetype = QueryMimeTypeHashNode( p_server , http_uri.ext_filename_base , http_uri.ext_filename_len ) ;
-	if( p_mimetype )
-	{
-		if( p_server->p_config->hscallback_type[0] && http_uri.ext_filename_len == p_server->hscallback_type_len && MEMCMP( http_uri.ext_filename_base , == , p_server->p_config->hscallback_type , http_uri.ext_filename_len ) )
-		{
-			if( p_server->pfuncHSProcessHttpRequest == NULL )
-			{
-				return HTTP_SERVICE_UNAVAILABLE;
-			}
-			else
-			{
-				return p_server->pfuncHSProcessHttpRequest( & http_uri , p_http_session->http );
-			}
-		}
-	}
-	
 	/* 组装URL */
 	memset( pathfilename , 0x00 , sizeof(pathfilename) );
 	snprintf( pathfilename , sizeof(pathfilename)-1 , "%s%.*s" , pathname , filename_len , filename );
@@ -209,9 +193,25 @@ int ProcessHttpRequest( struct HtmlServer *p_server , struct HttpSession *p_http
 	}
 	else
 	{
-		b = GetHttpResponseBuffer(p_http_session->http) ;
+		/* 查询流类型 */
+		p_mimetype = QueryMimeTypeHashNode( p_server , http_uri.ext_filename_base , http_uri.ext_filename_len ) ;
+		if( p_mimetype )
+		{
+			if( p_server->p_config->hscallback_type[0] && http_uri.ext_filename_len == p_server->hscallback_type_len && MEMCMP( http_uri.ext_filename_base , == , p_server->p_config->hscallback_type , http_uri.ext_filename_len ) )
+			{
+				if( p_server->pfuncHSProcessHttpRequest == NULL )
+				{
+					return HTTP_SERVICE_UNAVAILABLE;
+				}
+				else
+				{
+					return p_server->pfuncHSProcessHttpRequest( & http_uri , p_http_session->http );
+				}
+			}
+		}
 		
 		/* 解析浏览器可以接受的压缩算法 */
+		b = GetHttpResponseBuffer(p_http_session->http) ;
 		token_base = QueryHttpHeaderPtr( p_http_session->http , HTTP_HEADER_ACCEPTENCODING , NULL ) ;
 		while( token_base && p_server->p_config->http_options.compress_on )
 		{

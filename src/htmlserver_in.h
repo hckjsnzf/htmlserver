@@ -174,7 +174,7 @@ struct HtmlServer
 	struct ProcessInfo		*p_this_process_info ;
 	int				process_info_index ;
 	
-	struct VirtualHost		virtualhost ;
+	struct VirtualHost		*p_virtualhost_default ;
 	int				virtualhost_hashsize ;
 	int				virtualhost_count ;
 	struct hlist_head		*virtualhost_hash ;

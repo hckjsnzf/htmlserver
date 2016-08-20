@@ -145,83 +145,8 @@ static int _WorkerProcess( struct HtmlServer *p_server )
 		{
 			p_data_session = p_event->data.ptr ;
 			
-			/* 如果是管道事件 */
-			if( p_data_session->type == DATASESSION_TYPE_PIPE )
-			{
-				int	n ;
-				char	ch = 0 ;
-				
-				DebugLog( __FILE__ , __LINE__ , "[%d]DATASESSION_TYPE_PIPE[%p] ---------" , p_server->process_info_index , p_data_session );
-				
-				n = read( p_server->p_this_process_info->pipe[0] , & ch , 1 ) ;
-				InfoLog( __FILE__ , __LINE__ , "read pipe return[%d] , ch[%c]" , n , ch );
-				if( n == 0 )
-				{
-					/* 管理进程发送给了优雅结束信号 */
-					struct epoll_event	*p_clean_event = NULL ;
-					struct ListenSession	*p_clean_session = NULL ;
-					
-					/* 关闭所有侦听 */
-					list_for_each_safe( p_curr , p_next , & (p_server->listen_session_list.list) )
-					{
-						p_clean_session = list_entry( p_curr , struct ListenSession , list ) ;
-						epoll_ctl( p_server->p_this_process_info->epoll_fd , EPOLL_CTL_DEL , p_clean_session->netaddr.sock , NULL );
-						close( p_clean_session->netaddr.sock );
-					}
-					
-					/* 屏蔽所有后续侦听事件 */
-					for( j = p_event-events+1 , p_clean_event = events+j ; j < p_server->p_this_process_info->epoll_nfds ; j++ , p_clean_event++ )
-					{
-						p_clean_session = p_clean_event->data.ptr ;
-						if( p_clean_session->type == DATASESSION_TYPE_LISTEN )
-							p_clean_session->type = 0 ;
-					}
-					
-					/* 关闭管道 */
-					epoll_ctl( p_server->p_this_process_info->epoll_fd , EPOLL_CTL_DEL , p_server->p_this_process_info->pipe[0] , NULL );
-					close( p_server->p_this_process_info->pipe[0] );
-					
-					g_exit_flag = 1 ;
-				}
-				else if( n > 0 )
-				{
-					if( ch == SIGNAL_REOPEN_LOG )
-					{
-						struct VirtualHost	*p_virtualhost = NULL ;
-						
-						/* 管理进程发送给了重新打开日志信号 */
-						CloseLogFile();
-						
-						for( i = 0 ; i < p_server->virtualhost_hashsize ; i++ )
-						{
-							hlist_for_each_entry( p_virtualhost , p_server->virtualhost_hash+i , virtualhost_node )
-							{
-								DebugLog( __FILE__ , __LINE__ , "close access_log[%s] #%d#" , p_virtualhost->access_log , p_virtualhost->access_log_fd );
-								close( p_virtualhost->access_log_fd );
-								
-								p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
-								if( p_virtualhost->access_log_fd == -1 )
-								{
-									ErrorLog( __FILE__ , __LINE__ ,  "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
-									return -1;
-								}
-								else
-								{
-									DebugLog( __FILE__ , __LINE__ ,  "open access log[%s] ok" , p_virtualhost->access_log );
-								}
-								
-							}
-						}
-					}
-				}
-				else
-				{
-					ErrorLog( __FILE__ , __LINE__ ,  "read pipe failed , errno[%d]" , errno );
-					return -1;
-				}
-			}
 			/* 如果是侦听端口事件 */
-			else if( p_data_session->type == DATASESSION_TYPE_LISTEN )
+			if( p_data_session->type == DATASESSION_TYPE_LISTEN )
 			{
 				p_listen_session = (struct ListenSession *)p_data_session ;
 				
@@ -394,6 +319,81 @@ static int _WorkerProcess( struct HtmlServer *p_server )
 				else
 				{
 					DebugLog( __FILE__ , __LINE__ , "HtmlCacheEventHander ok" );
+				}
+			}
+			/* 如果是管道事件 */
+			else if( p_data_session->type == DATASESSION_TYPE_PIPE )
+			{
+				int	n ;
+				char	ch = 0 ;
+				
+				DebugLog( __FILE__ , __LINE__ , "[%d]DATASESSION_TYPE_PIPE[%p] ---------" , p_server->process_info_index , p_data_session );
+				
+				n = read( p_server->p_this_process_info->pipe[0] , & ch , 1 ) ;
+				InfoLog( __FILE__ , __LINE__ , "read pipe return[%d] , ch[%c]" , n , ch );
+				if( n == 0 )
+				{
+					/* 管理进程发送给了优雅结束信号 */
+					struct epoll_event	*p_clean_event = NULL ;
+					struct ListenSession	*p_clean_session = NULL ;
+					
+					/* 关闭所有侦听 */
+					list_for_each_safe( p_curr , p_next , & (p_server->listen_session_list.list) )
+					{
+						p_clean_session = list_entry( p_curr , struct ListenSession , list ) ;
+						epoll_ctl( p_server->p_this_process_info->epoll_fd , EPOLL_CTL_DEL , p_clean_session->netaddr.sock , NULL );
+						close( p_clean_session->netaddr.sock );
+					}
+					
+					/* 屏蔽所有后续侦听事件 */
+					for( j = p_event-events+1 , p_clean_event = events+j ; j < p_server->p_this_process_info->epoll_nfds ; j++ , p_clean_event++ )
+					{
+						p_clean_session = p_clean_event->data.ptr ;
+						if( p_clean_session->type == DATASESSION_TYPE_LISTEN )
+							p_clean_session->type = 0 ;
+					}
+					
+					/* 关闭管道 */
+					epoll_ctl( p_server->p_this_process_info->epoll_fd , EPOLL_CTL_DEL , p_server->p_this_process_info->pipe[0] , NULL );
+					close( p_server->p_this_process_info->pipe[0] );
+					
+					g_exit_flag = 1 ;
+				}
+				else if( n > 0 )
+				{
+					if( ch == SIGNAL_REOPEN_LOG )
+					{
+						struct VirtualHost	*p_virtualhost = NULL ;
+						
+						/* 管理进程发送给了重新打开日志信号 */
+						CloseLogFile();
+						
+						for( i = 0 ; i < p_server->virtualhost_hashsize ; i++ )
+						{
+							hlist_for_each_entry( p_virtualhost , p_server->virtualhost_hash+i , virtualhost_node )
+							{
+								DebugLog( __FILE__ , __LINE__ , "close access_log[%s] #%d#" , p_virtualhost->access_log , p_virtualhost->access_log_fd );
+								close( p_virtualhost->access_log_fd );
+								
+								p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
+								if( p_virtualhost->access_log_fd == -1 )
+								{
+									ErrorLog( __FILE__ , __LINE__ ,  "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
+									return -1;
+								}
+								else
+								{
+									DebugLog( __FILE__ , __LINE__ ,  "open access log[%s] ok" , p_virtualhost->access_log );
+								}
+								
+							}
+						}
+					}
+				}
+				else
+				{
+					ErrorLog( __FILE__ , __LINE__ ,  "read pipe failed , errno[%d]" , errno );
+					return -1;
 				}
 			}
 		}

@@ -183,12 +183,6 @@ int LoadConfig( char *config_pathfilename , struct HtmlServer *p_server )
 		return nret;
 	
 	/* 展开日志文件名中的环境变量 */
-	if( p_server->p_config->server.domain[0] == '\0' )
-	{
-		ErrorLog( __FILE__ , __LINE__ , "domain[%s] not found" , p_server->p_config->server.domain );
-		return -1;
-	}
-	
 	nret = StringExpandEnvval( p_server->p_config->server.wwwroot , sizeof(p_server->p_config->server.wwwroot) ) ;
 	if( nret )
 		return nret;
@@ -206,12 +200,6 @@ int LoadConfig( char *config_pathfilename , struct HtmlServer *p_server )
 	
 	for( i = 0 ; i < p_server->p_config->servers._server_count ; i++ )
 	{
-		if( p_server->p_config->servers.server[i].domain[0] == '\0' )
-		{
-			ErrorLog( __FILE__ , __LINE__ , "domain[%s] not found" , p_server->p_config->servers.server[i].domain );
-			return -1;
-		}
-		
 		nret = StringExpandEnvval( p_server->p_config->servers.server[i].wwwroot , sizeof(p_server->p_config->servers.server[i].wwwroot) ) ;
 		if( nret )
 			return nret;

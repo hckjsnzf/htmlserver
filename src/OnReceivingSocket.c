@@ -68,21 +68,16 @@ int OnReceivingSocket( struct HtmlServer *p_server , struct HttpSession *p_http_
 		host = QueryHttpHeaderPtr( p_http_session->http , "Host" , & host_len ) ;
 		if( host == NULL )
 			host = "" , host_len = 0 ;
-		if( p_server->virtualhost_count == 1 )
+		p_server->p_virtualhost = QueryVirtualHostHashNode( p_server , host , host_len ) ;
+		if( p_server->p_virtualhost == NULL && p_server->p_virtualhost_default )
 		{
-			if( p_server->virtualhost.domain_len == host_len && STRNCMP( p_server->virtualhost.domain , == , host , host_len ) )
-				p_server->p_virtualhost = & (p_server->virtualhost) ;
-			else
-				p_server->p_virtualhost = NULL ;
-		}
-		else
-		{
-			p_server->p_virtualhost = QueryVirtualHostHashNode( p_server , host , host_len ) ;
+			p_server->p_virtualhost = p_server->p_virtualhost_default ;
 		}
 		if( p_server->p_virtualhost )
 		{
 			DebugLog( __FILE__ , __LINE__ , "QueryVirtualHostHashNode[%.*s] ok , wwwroot[%s]" , host_len , host , p_server->p_virtualhost->wwwroot );
 			
+			/* 先格式化响应头首行，用成功状态码 */
 			nret = FormatHttpResponseStartLine( HTTP_OK , p_http_session->http , 0 ) ;
 			if( nret )
 			{
@@ -94,6 +89,7 @@ int OnReceivingSocket( struct HtmlServer *p_server , struct HttpSession *p_http_
 			nret = ProcessHttpRequest( p_server , p_http_session , p_server->p_virtualhost->wwwroot , GetHttpHeaderPtr_URI(p_http_session->http,NULL) , GetHttpHeaderLen_URI(p_http_session->http) ) ;
 			if( nret != HTTP_OK )
 			{
+				/* 格式化响应头和体，用出错状态码 */
 				nret = FormatHttpResponseStartLine( nret , p_http_session->http , 1 ) ;
 				if( nret )
 				{
@@ -110,6 +106,7 @@ int OnReceivingSocket( struct HtmlServer *p_server , struct HttpSession *p_http_
 		{
 			DebugLog( __FILE__ , __LINE__ , "QueryVirtualHostHashNode[%.*s] not found" , host_len , host );
 			
+			/* 格式化响应头和体，用出错状态码 */
 			nret = FormatHttpResponseStartLine( HTTP_FORBIDDEN , p_http_session->http , 1 ) ;
 			if( nret )
 			{

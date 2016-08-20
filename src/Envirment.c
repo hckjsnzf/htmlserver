@@ -61,81 +61,88 @@ int InitServerEnvirment( struct HtmlServer *p_server )
 	}
 	
 	/* 注册所有虚拟主机 */
-	p_virtualhost = (struct VirtualHost *)malloc( sizeof(struct VirtualHost) ) ;
-	if( p_virtualhost == NULL )
-	{
-		ErrorLog( __FILE__ , __LINE__ , "malloc failed , errno[%d]" , errno );
-		return -1;
-	}
-	memset( p_virtualhost , 0x00 , sizeof(struct VirtualHost) );
+	p_server->virtualhost_count = 0 ;
 	
-	strncpy( p_virtualhost->domain , p_server->p_config->server.domain , sizeof(p_virtualhost->domain)-1 );
-	p_virtualhost->domain_len = strlen(p_virtualhost->domain) ;
-	strncpy( p_virtualhost->wwwroot , p_server->p_config->server.wwwroot , sizeof(p_virtualhost->wwwroot)-1 );
-	strncpy( p_virtualhost->index , p_server->p_config->server.index , sizeof(p_virtualhost->index)-1 );
-	strncpy( p_virtualhost->access_log , p_server->p_config->server.access_log , sizeof(p_virtualhost->access_log)-1 );
-	p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
-	if( p_virtualhost->access_log_fd == -1 )
+	if( p_server->p_config->server.wwwroot[0] && p_server->p_config->server.access_log )
 	{
-		ErrorLog( __FILE__ , __LINE__ , "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
-		return -1;
-	}
-	SetHttpCloseExec( p_virtualhost->access_log_fd );
-	
-	nret = PushVirtualHostHashNode( p_server , p_virtualhost ) ;
-	if( nret )
-	{
-		ErrorLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] failed[%d] , errno[%d]" , p_virtualhost->domain , p_virtualhost->wwwroot , nret , errno );
-		return -1;
-	}
-	else
-	{
-		DebugLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] ok" , p_virtualhost->domain , p_virtualhost->wwwroot , nret );
-	}
-	
-	if( p_server->p_config->servers._server_count == 0 )
-	{
-		memcpy( & (p_server->virtualhost) , p_virtualhost , sizeof(struct VirtualHost) );
-		
-		p_server->virtualhost_count = 1 ;
-	}
-	else
-	{
-		for( i = 0 ; i < p_server->p_config->servers._server_count ; i++ )
+		p_virtualhost = (struct VirtualHost *)malloc( sizeof(struct VirtualHost) ) ;
+		if( p_virtualhost == NULL )
 		{
-			p_virtualhost = (struct VirtualHost *)malloc( sizeof(struct VirtualHost) ) ;
-			if( p_virtualhost == NULL )
-			{
-				ErrorLog( __FILE__ , __LINE__ , "malloc failed , errno[%d]" , errno );
-				return -1;
-			}
-			memset( p_virtualhost , 0x00 , sizeof(struct VirtualHost) );
-			strncpy( p_virtualhost->domain , p_server->p_config->servers.server[i].domain , sizeof(p_virtualhost->domain)-1 );
-			p_virtualhost->domain_len = strlen(p_virtualhost->domain) ;
-			strncpy( p_virtualhost->wwwroot , p_server->p_config->servers.server[i].wwwroot , sizeof(p_virtualhost->wwwroot)-1 );
-			strncpy( p_virtualhost->index , p_server->p_config->servers.server[i].index , sizeof(p_virtualhost->index)-1 );
-			strncpy( p_virtualhost->access_log , p_server->p_config->servers.server[i].access_log , sizeof(p_virtualhost->access_log)-1 );
-			p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
-			if( p_virtualhost->access_log_fd == -1 )
-			{
-				ErrorLog( __FILE__ , __LINE__ , "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
-				return -1;
-			}
-			SetHttpCloseExec( p_virtualhost->access_log_fd );
-			
-			nret = PushVirtualHostHashNode( p_server , p_virtualhost ) ;
-			if( nret )
-			{
-				ErrorLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] failed[%d] , errno[%d]" , p_virtualhost->domain , p_virtualhost->wwwroot , nret , errno );
-				return -1;
-			}
-			else
-			{
-				DebugLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] ok" , p_virtualhost->domain , p_virtualhost->wwwroot , nret );
-			}
+			ErrorLog( __FILE__ , __LINE__ , "malloc failed , errno[%d]" , errno );
+			return -1;
+		}
+		memset( p_virtualhost , 0x00 , sizeof(struct VirtualHost) );
+		
+		strncpy( p_virtualhost->domain , p_server->p_config->server.domain , sizeof(p_virtualhost->domain)-1 );
+		p_virtualhost->domain_len = strlen(p_virtualhost->domain) ;
+		strncpy( p_virtualhost->wwwroot , p_server->p_config->server.wwwroot , sizeof(p_virtualhost->wwwroot)-1 );
+		strncpy( p_virtualhost->index , p_server->p_config->server.index , sizeof(p_virtualhost->index)-1 );
+		strncpy( p_virtualhost->access_log , p_server->p_config->server.access_log , sizeof(p_virtualhost->access_log)-1 );
+		p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
+		if( p_virtualhost->access_log_fd == -1 )
+		{
+			ErrorLog( __FILE__ , __LINE__ , "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
+			return -1;
+		}
+		SetHttpCloseExec( p_virtualhost->access_log_fd );
+		
+		nret = PushVirtualHostHashNode( p_server , p_virtualhost ) ;
+		if( nret )
+		{
+			ErrorLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] failed[%d] , errno[%d]" , p_virtualhost->domain , p_virtualhost->wwwroot , nret , errno );
+			return -1;
+		}
+		else
+		{
+			DebugLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] ok" , p_virtualhost->domain , p_virtualhost->wwwroot , nret );
 		}
 		
-		p_server->virtualhost_count = p_server->p_config->servers._server_count + 1 ;
+		if( p_virtualhost->domain[0] == '\0' )
+			p_server->p_virtualhost_default = p_virtualhost ;
+		
+		p_server->virtualhost_count++;
+	}
+	
+	for( i = 0 ; i < p_server->p_config->servers._server_count ; i++ )
+	{
+		if( p_server->p_config->servers.server[i].wwwroot[0] == '\0' || p_server->p_config->servers.server[i].access_log[0] == '\0' )
+			continue;
+		
+		p_virtualhost = (struct VirtualHost *)malloc( sizeof(struct VirtualHost) ) ;
+		if( p_virtualhost == NULL )
+		{
+			ErrorLog( __FILE__ , __LINE__ , "malloc failed , errno[%d]" , errno );
+			return -1;
+		}
+		memset( p_virtualhost , 0x00 , sizeof(struct VirtualHost) );
+		strncpy( p_virtualhost->domain , p_server->p_config->servers.server[i].domain , sizeof(p_virtualhost->domain)-1 );
+		p_virtualhost->domain_len = strlen(p_virtualhost->domain) ;
+		strncpy( p_virtualhost->wwwroot , p_server->p_config->servers.server[i].wwwroot , sizeof(p_virtualhost->wwwroot)-1 );
+		strncpy( p_virtualhost->index , p_server->p_config->servers.server[i].index , sizeof(p_virtualhost->index)-1 );
+		strncpy( p_virtualhost->access_log , p_server->p_config->servers.server[i].access_log , sizeof(p_virtualhost->access_log)-1 );
+		p_virtualhost->access_log_fd = OPEN( p_virtualhost->access_log , O_CREAT_WRONLY_APPEND ) ;
+		if( p_virtualhost->access_log_fd == -1 )
+		{
+			ErrorLog( __FILE__ , __LINE__ , "open access log[%s] failed , errno[%d]" , p_virtualhost->access_log , errno );
+			return -1;
+		}
+		SetHttpCloseExec( p_virtualhost->access_log_fd );
+		
+		nret = PushVirtualHostHashNode( p_server , p_virtualhost ) ;
+		if( nret )
+		{
+			ErrorLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] failed[%d] , errno[%d]" , p_virtualhost->domain , p_virtualhost->wwwroot , nret , errno );
+			return -1;
+		}
+		else
+		{
+			DebugLog( __FILE__ , __LINE__ , "PushVirtualHostHashNode[%s][%s] ok" , p_virtualhost->domain , p_virtualhost->wwwroot , nret );
+		}
+		
+		if( p_virtualhost->domain[0] == '\0' )
+			p_server->p_virtualhost_default = p_virtualhost ;
+		
+		p_server->virtualhost_count++;
 	}
 	
 	/* 创建流类型哈希表 */

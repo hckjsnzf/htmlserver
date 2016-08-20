@@ -138,6 +138,33 @@ ifneq ($(strip $(BININST2)),)
 endif
 endif
 
+ifneq ($(strip $(LIB)),)
+ifneq ($(strip $(LIBINST)),)
+	@if [ ! -d "$(LIBINST)" ] ; then \
+		echo $(MKDIR) $(LIBINST) ; \
+		$(MKDIR) $(LIBINST) ; \
+	fi ; \
+	for FILE in `echo $(LIB)` ; do \
+		echo $(CP) $$FILE $(LIBINST)/ ; \
+		$(RM) $(LIBINST)/$$FILE ; \
+		$(CP) $$FILE $(LIBINST)/ ; \
+	done
+endif
+endif
+ifneq ($(strip $(LIB2)),)
+ifneq ($(strip $(LIBINST2)),)
+	@if [ ! -d "$(LIBINST2)" ] ; then \
+		echo $(MKDIR) $(LIBINST2) ; \
+		$(MKDIR) $(LIBINST2) ; \
+	fi ; \
+	for FILE in `echo $(LIB2)` ; do \
+		echo $(CP) $$FILE $(LIBINST2)/ ; \
+		$(RM) $(LIBINST2)/$$FILE ; \
+		$(CP) $$FILE $(LIBINST2)/ ; \
+	done
+endif
+endif
+
 ifneq ($(strip $(HDER)),)
 ifneq ($(strip $(HDERINST)),)
 	@if [ ! -d "$(HDERINST)" ] ; then \
@@ -200,6 +227,23 @@ ifneq ($(strip $(BININST2)),)
 	@for FILE in `echo $(BIN2)` ; do \
 		echo $(RM) $(BININST2)/$$FILE ; \
 		$(RM) $(BININST2)/$$FILE ; \
+	done
+endif
+endif
+
+ifneq ($(strip $(LIB)),)
+ifneq ($(strip $(LIBINST)),)
+	@for FILE in `echo $(LIB)` ; do \
+		echo $(RM) $(LIBINST)/$$FILE ; \
+		$(RM) $(LIBINST)/$$FILE ; \
+	done
+endif
+endif
+ifneq ($(strip $(LIB2)),)
+ifneq ($(strip $(LIBINST2)),)
+	@for FILE in `echo $(LIB2)` ; do \
+		echo $(RM) $(LIBINST2)/$$FILE ; \
+		$(RM) $(LIBINST2)/$$FILE ; \
 	done
 endif
 endif

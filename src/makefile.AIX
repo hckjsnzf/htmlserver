@@ -132,6 +132,29 @@ install		:	all
 		done \
 	fi
 
+	@if [ -n "$(LIB)" -a -n "$(LIBINST)" ] ; then \
+		if [ ! -d "$(LIBINST)" ] ; then \
+			echo $(MKDIR) $(LIBINST) ; \
+			$(MKDIR) $(LIBINST) ; \
+		fi ; \
+		for FILE in `echo $(LIB)` ; do \
+			echo $(CP) $$FILE $(LIBINST)/ ; \
+			$(RM) $(LIBINST)/$$FILE ; \
+			$(CP) $$FILE $(LIBINST)/ ; \
+		done \
+	fi
+	@if [ -n "$(LIB2)" -a -n "$(LIBINST2)" ] ; then \
+		if [ ! -d "$(LIBINST2)" ] ; then \
+			echo $(MKDIR) $(LIBINST2) ; \
+			$(MKDIR) $(LIBINST2) ; \
+		fi ; \
+		for FILE in `echo $(LIB2)` ; do \
+			echo $(CP) $$FILE $(LIBINST2)/ ; \
+			$(RM) $(LIBINST2)/$$FILE ; \
+			$(CP) $$FILE $(LIBINST2)/ ; \
+		done \
+	fi
+
 	@if [ -n "$(HDER)" -a -n "$(HDERINST)" ] ; then \
 		if [ ! -d "$(HDERINST)" ] ; then \
 			echo $(MKDIR) $(HDERINST) ; \
@@ -184,6 +207,19 @@ uninstall		:
 		for FILE in `echo $(BIN2)` ; do \
 			echo $(RM) $(BININST2)/$$FILE ; \
 			$(RM) $(BININST2)/$$FILE ; \
+		done \
+	fi
+
+	@if [ -n "$(LIB)" -a -n "$(LIBINST)" ] ; then \
+		for FILE in `echo $(LIB)` ; do \
+			echo $(RM) $(LIBINST)/$$FILE ; \
+			$(RM) $(LIBINST)/$$FILE ; \
+		done \
+	fi
+	@if [ -n "$(LIB2)" -a -n "$(LIBINST2)" ] ; then \
+		for FILE in `echo $(LIB2)` ; do \
+			echo $(RM) $(LIBINST2)/$$FILE ; \
+			$(RM) $(LIBINST2)/$$FILE ; \
 		done \
 	fi
 
